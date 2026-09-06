@@ -2,8 +2,9 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/m/MessageToast",
     "alan/projetos/projetinho/model/MockLocaisService",
-    "alan/projetos/projetinho/util/PageNavigation"
-], function(Controller, MessageToast, MockLocaisService, PageNavigation) {
+    "alan/projetos/projetinho/util/PageNavigation",
+    "alan/projetos/projetinho/util/LocationSearch"
+], function(Controller, MessageToast, MockLocaisService, PageNavigation, LocationSearch) {
     "use strict";
 
     return Controller.extend("alan.projetos.projetinho.controller.View1", {
@@ -104,6 +105,23 @@ sap.ui.define([
             this.fetchWeatherForCity("São Paulo");
 
             PageNavigation.init(this, "page1");
+
+            this.getOwnerComponent().getRouter().getRoute("RouteView1")
+                .attachPatternMatched(this._onRouteView1Matched, this);
+        },
+
+        _getCityInput: function () {
+            return this.byId("popularPlacesHeader--cityInput");
+        },
+
+        _onRouteView1Matched: function () {
+            var sCity = this.getOwnerComponent()._pendingCitySearch;
+            if (!sCity) {
+                return;
+            }
+
+            this.getOwnerComponent()._pendingCitySearch = null;
+            this.navigateToCity(sCity);
         },
 
         onExit: function() {
@@ -128,14 +146,28 @@ sap.ui.define([
 
         onButtonPress: function () {
             console.log("Botão buscar pressionado!");
+            var sQuery = LocationSearch.normalizeQuery(this._getCityInput().getValue());
+
+            if (!sQuery) {
+                MessageToast.show("Digite uma cidade.");
+                return;
+            }
+
+            if (!LocationSearch.isValidSearchQuery(sQuery)) {
+                MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                return;
+            }
+
             this.onSearchLocation();
             this.onBuscarClima();
         },
 
 
         onSearchLocation: function () {
-            var sQuery = this.byId("cityInput").getValue();
-            if (!sQuery) return;
+            var sQuery = LocationSearch.normalizeQuery(this._getCityInput().getValue());
+            if (!sQuery) {
+                return;
+            }
 
             var that = this;
             
@@ -143,7 +175,6 @@ sap.ui.define([
                 .then(response => response.json())
                 .then(data => {
                     if (data.length === 0) {
-                        MessageToast.show("Local não encontrado.");
                         return;
                     } 
 
@@ -336,9 +367,14 @@ sap.ui.define([
 
         onBuscarClima: async function () {
             console.log(">>> ENTROU NO onBuscarClima <<<");
-            var sCidade = this.byId("cityInput").getValue();
+            var sCidade = LocationSearch.normalizeQuery(this._getCityInput().getValue());
             if (!sCidade) {
                 MessageToast.show("Digite uma cidade.");
+                return;
+            }
+
+            if (!LocationSearch.isValidSearchQuery(sCidade)) {
+                MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
                 return;
             }
             console.log("onBuscarClima chamado para cidade:", sCidade);
@@ -357,8 +393,9 @@ sap.ui.define([
                 .then(dados => {
                     console.log("Resposta da API /weather:", dados);
 
-                    if (!dados.coord) {
-                        throw new Error("Coordenadas não encontradas para esta cidade.");
+                    if (LocationSearch.isOpenWeatherMapNotFound(dados)) {
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                        return;
                     }
 
                     // Adicionar texto dinâmico baseado na descrição do clima
@@ -581,7 +618,8 @@ sap.ui.define([
                     console.log("Modelo forecastModel na view:", testModel ? testModel.getData() : "Modelo não encontrado");
                 })
                 .catch(err => {
-                    MessageToast.show("Erro ao buscar clima: " + err.message);
+                    console.error(err);
+                    MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
                 });
         },
 
@@ -734,7 +772,7 @@ sap.ui.define([
 
         navigateToCity: function(cityName) {
             // Mesmo fluxo do botão Buscar: preenche o input e dispara clima + mapa + mock
-            var oCityInput = this.byId("cityInput");
+            var oCityInput = this._getCityInput();
             if (oCityInput) {
                 oCityInput.setValue(cityName);
             }
@@ -752,8 +790,9 @@ sap.ui.define([
                 .then(dados => {
                     console.log("Resposta da API recebida para", cityName);
                     
-                    if (!dados.coord) {
-                        throw new Error("Coordenadas não encontradas para esta cidade.");
+                    if (LocationSearch.isOpenWeatherMapNotFound(dados)) {
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                        return;
                     }
 
                     // Adicionar texto dinâmico e ícone
@@ -1094,7 +1133,15 @@ sap.ui.define([
                 'clouds': 'nublado'
             };
 
-            return weatherDescriptions[(description || '').toLowerCase()] || (description || '');
+            var translated = weatherDescriptions[(description || '').toLowerCase()] || (description || '');
+            return this._capitalizeFirstLetter(translated);
+        },
+
+        _capitalizeFirstLetter: function(text) {
+            if (!text) {
+                return text;
+            }
+            return text.charAt(0).toUpperCase() + text.slice(1);
         },
 
         // Função para gerar texto dinâmico baseado na descrição do clima
