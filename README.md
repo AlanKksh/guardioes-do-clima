@@ -68,11 +68,15 @@ Na pasta `project/`:
 npm start
 ```
 
-A aplicação abre automaticamente no navegador. Alternativas úteis:
+O projeto abre no **Fiori Launchpad** (`test/flp.html`) — a tela com o tile **Guardiões do Clima** (como na foto). Clique no tile para entrar na aplicação.
+
+> **Importante:** não use `#app-preview` na URL de abertura — esse hash abre o app direto, pulando o launchpad.
+
+Alternativas:
 
 ```bash
-npm run start-noflp    # Abre direto no index.html
-npm run start-local    # Usa configuração local (ui5-local.yaml)
+npm run start-noflp    # Abre direto no index.html (sem launchpad FLP)
+npm run start-local    # Launchpad FLP com ui5-local.yaml
 ```
 
 ### VS Code
@@ -102,6 +106,7 @@ Acesse: [http://localhost:8080](http://localhost:8080)
 
 | Página | Rota | Descrição |
 |--------|------|-----------|
+| Launchpad (FLP) | `test/flp.html` | Tela inicial ao rodar `npm start` |
 | Guardiões do Clima | `/` | Painel de clima, mapa 2D e guia turístico |
 | Map 3D | `/view2` | Globo terrestre 3D com camada climática |
 
