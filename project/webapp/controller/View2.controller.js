@@ -5,8 +5,9 @@ sap.ui.define([
     "sap/ui/core/ResizeHandler",
     "alan/projetos/projetinho/util/PageNavigation",
     "alan/projetos/projetinho/util/CesiumGlobe",
-    "alan/projetos/projetinho/util/ClimateLayer"
-], function (Controller, JSONModel, MessageToast, ResizeHandler, PageNavigation, CesiumGlobe, ClimateLayer) {
+    "alan/projetos/projetinho/util/ClimateLayer",
+    "alan/projetos/projetinho/util/LocationSearch"
+], function (Controller, JSONModel, MessageToast, ResizeHandler, PageNavigation, CesiumGlobe, ClimateLayer, LocationSearch) {
     "use strict";
 
     var MIN_GLOBE_HEIGHT = 120;
@@ -230,13 +231,24 @@ sap.ui.define([
 
         onGlobeSearch: function (oEvent) {
             var sQuery = oEvent.getParameter("query") || this.byId("globeSearchField").getValue();
-            if (!sQuery.trim()) {
+            this._searchLocationOnGlobe(sQuery);
+        },
+
+        _searchLocationOnGlobe: function (sQuery) {
+            var sNormalizedQuery = LocationSearch.normalizeQuery(sQuery);
+
+            if (!sNormalizedQuery) {
                 MessageToast.show("Digite um local para buscar.");
                 return;
             }
 
+            if (!LocationSearch.isValidSearchQuery(sNormalizedQuery)) {
+                MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                return;
+            }
+
             var sUrl = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q="
-                + encodeURIComponent(sQuery.trim());
+                + encodeURIComponent(sNormalizedQuery);
 
             fetch(sUrl, {
                 headers: {
@@ -248,7 +260,7 @@ sap.ui.define([
                 })
                 .then(function (aResults) {
                     if (!aResults.length) {
-                        MessageToast.show("Local não encontrado.");
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
                         return;
                     }
 
@@ -257,6 +269,7 @@ sap.ui.define([
                     var fLon = parseFloat(oPlace.lon);
                     var oModel = this.getView().getModel("globeModel");
 
+                    oModel.setProperty("/searchQuery", sNormalizedQuery);
                     oModel.setProperty("/selectedLat", fLat);
                     oModel.setProperty("/selectedLon", fLon);
                     oModel.setProperty("/selectedLatFormatted", this._formatCoordinate(fLat) + "°");
@@ -272,12 +285,55 @@ sap.ui.define([
                 });
         },
 
+        _navigateToCityOnGlobe: function (cityName) {
+            var oCityInput = this._getCityInput();
+            if (oCityInput) {
+                oCityInput.setValue(cityName);
+            }
+
+            this._searchLocationOnGlobe(cityName);
+        },
+
         onNavigateToPage1: function () {
             PageNavigation.navigateToPage1(this);
         },
 
         onNavigateToPage2: function () {
             PageNavigation.navigateToPage2(this);
+        },
+
+        _getCityInput: function () {
+            return this.byId("view2PopularPlacesHeader--cityInput");
+        },
+
+        onButtonPress: function () {
+            var sCity = LocationSearch.normalizeQuery(this._getCityInput().getValue());
+            if (!sCity) {
+                MessageToast.show("Digite uma cidade.");
+                return;
+            }
+
+            this._searchLocationOnGlobe(sCity);
+        },
+
+        onNavigateToSaoPaulo: function () {
+            this._navigateToCityOnGlobe("São Paulo");
+        },
+
+        onNavigateToRioGrandeDoSul: function () {
+            this._navigateToCityOnGlobe("Rio Grande Do Sul");
+        },
+
+        onNavigateToRio: function () {
+            this._navigateToCityOnGlobe("Rio de Janeiro");
+        },
+
+        onNavigateToBrasilia: function () {
+            this._navigateToCityOnGlobe("Brasília");
+        },
+
+        onNavigateToSalvador: function () {
+            this._navigateToCityOnGlobe("Salvador");
         },
 
         onExit: function () {

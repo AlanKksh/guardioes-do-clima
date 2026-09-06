@@ -16,6 +16,11 @@
                     id="view2PageNavFragment"
                     fragmentName="alan.projetos.projetinho.view.fragments.PageNavigation"
                     type="XML"/>
+
+                <core:Fragment
+                    id="view2PopularPlacesHeader"
+                    fragmentName="alan.projetos.projetinho.view.fragments.PopularPlacesHeader"
+                    type="XML"/>
             </OverflowToolbar>
         </customHeader>
 
@@ -39,14 +44,6 @@
                     </VBox>
 
                     <VBox id="view2Sidebar" class="view2Sidebar" height="100%">
-
-                        <SearchField
-                            id="globeSearchField"
-                            width="100%"
-                            placeholder="Buscar cidade, estado ou país..."
-                            search=".onGlobeSearch"
-                            value="{globeModel>/searchQuery}"
-                            class="view2SearchField"/>
 
                         <VBox id="view2SidebarPanels" class="view2SidebarPanels">
 
