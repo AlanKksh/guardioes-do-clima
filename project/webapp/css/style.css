@@ -309,3 +309,87 @@ html, body, body > div, #container, #container-uiarea, #app {
     height: 0;
   }
 }
+
+/* Home Launchpad (estilo Fiori Launchpad) */
+.homeLaunchpadPage {
+  background: #fff;
+}
+
+.homeLaunchpadPage .sapMPageEnableScrolling {
+  height: 100%;
+}
+
+.homeShell {
+  min-height: 100%;
+}
+
+.homeFlpShellBar {
+  background: #fff;
+  border-bottom: 1px solid #d9d9d9;
+  padding: 0 0.5rem;
+  height: 2.75rem;
+}
+
+.homeFlpShellBar .sapMBarContainer {
+  height: 2.75rem;
+}
+
+.homeFlpBrand {
+  gap: 0.5rem;
+}
+
+.homeFlpHomeBtn {
+  font-weight: 600;
+  color: #32363a;
+}
+
+.homeFlpTabs {
+  background: #fff;
+  border-bottom: 1px solid #d9d9d9;
+  padding: 0 1.5rem;
+  min-height: 2.5rem;
+}
+
+.homeFlpTab {
+  padding: 0.75rem 0;
+  margin-right: 1.5rem;
+  font-size: 0.875rem;
+  color: #6a6d70;
+  text-decoration: none;
+}
+
+.homeFlpTabActive {
+  color: #0a6ed1;
+  font-weight: 600;
+  border-bottom: 2px solid #0a6ed1;
+}
+
+.homeTilesRow {
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 2rem;
+  background: #f5f6f7;
+  flex: 1;
+}
+
+.homeAppTile {
+  width: 11.5rem;
+  box-shadow: 0 0 0.0625rem 0 rgba(0, 0, 0, 0.15), 0 0.0625rem 0.25rem 0 rgba(0, 0, 0, 0.1);
+  border-radius: 0.25rem;
+}
+
+.homeAppTile:hover {
+  box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 600px) {
+  .homeFlpTabs,
+  .homeTilesRow {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .homeAppTile {
+    width: 100%;
+    max-width: 18rem;
+  }
+}
