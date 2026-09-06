@@ -1273,6 +1273,10 @@ sap.ui.define([
                 this._oDialog = null;
             }
 
+            var sTopicsTitle = this._localPesquisado
+                ? "O que fazer por aqui"
+                : "Experimente selecionar uma cidade para ter o guia de destinos";
+
             this._oDialog = new sap.m.Dialog({
                 title: "Guia do destino",
                 contentWidth: "520px",
@@ -1301,7 +1305,7 @@ sap.ui.define([
                             }).addStyleClass("sapUiSmallMarginBottom"),
 
                             new sap.m.Title({
-                                text: "O que fazer por aqui",
+                                text: sTopicsTitle,
                                 titleStyle: "H5"
                             }).addStyleClass("sapUiTinyMarginBottom"),
 
