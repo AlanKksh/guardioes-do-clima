@@ -368,7 +368,7 @@ sap.ui.define([
 
             var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
-                encodeURIComponent(sCidade) + "&appid=" + sChaveAPI + "&units=metric";
+                encodeURIComponent(sCidade) + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
             fetch(sUrlWeather)
                 .then(res => res.json())
@@ -383,11 +383,11 @@ sap.ui.define([
                     var weatherDescriptionPT = this.getWeatherDescriptionInPortuguese(weatherDescription);
                     dados.weatherDescriptionPT = weatherDescriptionPT;
                     dados.weather[0].description = weatherDescriptionPT;
-                    var dynamicText = this.getDynamicWeatherText(weatherDescription);
+                    var weatherMain = dados.weather[0].main;
+                    var dynamicText = this.getDynamicWeatherText(weatherMain, weatherDescription);
                     dados.dynamicText = dynamicText;
                     
                     // Obter ícone e cor baseado no tipo de clima
-                    var weatherMain = dados.weather[0].main;
                     var iconAndColor = this.getWeatherIconAndColor(weatherMain);
                     dados.weatherIcon = iconAndColor.icon;
                     dados.weatherColor = iconAndColor.color;
@@ -432,7 +432,7 @@ sap.ui.define([
                     this.buscarInformacoesTuristicas(sCidade || dados.name);
 
                     var sUrlForecast = "https://api.openweathermap.org/data/2.5/forecast?" +
-                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric";
+                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
                     return fetch(sUrlForecast);
                 })
@@ -747,7 +747,7 @@ sap.ui.define([
         fetchWeatherForCity: function(cityName) {
             var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
-                encodeURIComponent(cityName) + "&appid=" + sChaveAPI + "&units=metric";
+                encodeURIComponent(cityName) + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
             fetch(sUrlWeather)
                 .then(res => res.json())
@@ -762,10 +762,10 @@ sap.ui.define([
                     var weatherDescriptionPT = this.getWeatherDescriptionInPortuguese(weatherDescription);
                     dados.weatherDescriptionPT = weatherDescriptionPT;
                     dados.weather[0].description = weatherDescriptionPT;
-                    var dynamicText = this.getDynamicWeatherText(weatherDescription);
+                    var weatherMain = dados.weather[0].main;
+                    var dynamicText = this.getDynamicWeatherText(weatherMain, weatherDescription);
                     dados.dynamicText = dynamicText;
                     
-                    var weatherMain = dados.weather[0].main;
                     var iconAndColor = this.getWeatherIconAndColor(weatherMain);
                     dados.weatherIcon = iconAndColor.icon;
                     dados.weatherColor = iconAndColor.color;
@@ -806,7 +806,7 @@ sap.ui.define([
                     var lon = dados.coord.lon;
                     var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
                     var sUrlForecast = "https://api.openweathermap.org/data/2.5/forecast?" +
-                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric";
+                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
                     return fetch(sUrlForecast);
                 })
@@ -1066,8 +1066,26 @@ sap.ui.define([
                 'light rain': 'chuva leve',
                 'moderate rain': 'chuva moderada',
                 'heavy rain': 'chuva forte',
+                'very heavy rain': 'chuva muito forte',
+                'extreme rain': 'chuva extrema',
+                'freezing rain': 'chuva congelante',
+                'light intensity shower rain': 'chuva leve',
+                'shower rain': 'chuva passageira',
+                'heavy intensity shower rain': 'chuva forte',
+                'ragged shower rain': 'chuva irregular',
+                'light intensity drizzle': 'garoa leve',
+                'drizzle': 'garoa',
+                'heavy intensity drizzle': 'garoa forte',
+                'thunderstorm with light rain': 'tempestade com chuva leve',
+                'thunderstorm with rain': 'tempestade com chuva',
+                'thunderstorm with heavy rain': 'tempestade com chuva forte',
+                'light thunderstorm': 'tempestade leve',
                 'thunderstorm': 'tempestade',
+                'heavy thunderstorm': 'tempestade forte',
+                'ragged thunderstorm': 'tempestade irregular',
+                'light snow': 'neve leve',
                 'snow': 'neve',
+                'heavy snow': 'neve forte',
                 'mist': 'névoa',
                 'fog': 'névoa',
                 'haze': 'névoa',
@@ -1077,13 +1095,13 @@ sap.ui.define([
                 'ash': 'cinzas',
                 'squall': 'rajada',
                 'tornado': 'tornado',
-                'drizzle': 'chuvisco',
                 'heavy intensity rain': 'chuva forte',
                 'rain': 'chuva',
                 'clouds': 'nublado'
             };
 
-            var translated = weatherDescriptions[(description || '').toLowerCase()] || (description || '');
+            var normalizedDescription = (description || '').toLowerCase();
+            var translated = weatherDescriptions[normalizedDescription] || normalizedDescription;
             return this._capitalizeFirstLetter(translated);
         },
 
@@ -1094,21 +1112,23 @@ sap.ui.define([
             return text.charAt(0).toUpperCase() + text.slice(1);
         },
 
-        // Função para gerar texto dinâmico baseado na descrição do clima
-        getDynamicWeatherText: function(weatherDescription) {
-            // Condições que indicam chuva
-            const rainConditions = [
-                'light rain', 'moderate rain', 'heavy rain', 'thunderstorm', 
-                'drizzle', 'heavy intensity rain', 'shower rain', 'rain'
-            ];
-            
-            // Se for condição de chuva, retorna "Mais Chuvoso"
-            if (rainConditions.includes(weatherDescription)) {
-                return 'Mais Chuvoso';
-            }
-            
-            // Para todas as outras condições (sol, nuvens, etc.), retorna "Mais Ensolarado"
-            return 'Mais Ensolarado';
+        // Função para gerar texto dinâmico baseado no tipo de clima (main + descrição)
+        getDynamicWeatherText: function(weatherMain, weatherDescription) {
+            var main = (weatherMain || "").toLowerCase();
+            var desc = (weatherDescription || "").toLowerCase();
+
+            var bChuva =
+                main === "rain" ||
+                main === "drizzle" ||
+                main === "thunderstorm" ||
+                desc.indexOf("chuva") !== -1 ||
+                desc.indexOf("garoa") !== -1 ||
+                desc.indexOf("tempestade") !== -1 ||
+                desc.indexOf("rain") !== -1 ||
+                desc.indexOf("drizzle") !== -1 ||
+                desc.indexOf("thunderstorm") !== -1;
+
+            return bChuva ? "Mais Chuvoso" : "Mais Ensolarado";
         },
 
         // Função para determinar o ícone e cor baseado no tipo de clima
