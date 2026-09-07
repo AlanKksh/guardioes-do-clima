@@ -230,7 +230,11 @@ sap.ui.define([
         },
 
         onGlobeSearch: function (oEvent) {
-            var sQuery = oEvent.getParameter("query") || this.byId("globeSearchField").getValue();
+            var sQuery = oEvent.getParameter("query");
+            if (!sQuery) {
+                var oSource = oEvent.getSource();
+                sQuery = oSource && oSource.getValue ? oSource.getValue() : "";
+            }
             this._searchLocationOnGlobe(sQuery);
         },
 

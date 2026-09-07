@@ -3,8 +3,9 @@ sap.ui.define([
     "sap/m/MessageToast",
     "alan/projetos/projetinho/model/MockLocaisService",
     "alan/projetos/projetinho/util/PageNavigation",
-    "alan/projetos/projetinho/util/LocationSearch"
-], function(Controller, MessageToast, MockLocaisService, PageNavigation, LocationSearch) {
+    "alan/projetos/projetinho/util/LocationSearch",
+    "alan/projetos/projetinho/config/Env"
+], function(Controller, MessageToast, MockLocaisService, PageNavigation, LocationSearch, Env) {
     "use strict";
 
     return Controller.extend("alan.projetos.projetinho.controller.View1", {
@@ -105,23 +106,10 @@ sap.ui.define([
             this.fetchWeatherForCity("São Paulo");
 
             PageNavigation.init(this, "page1");
-
-            this.getOwnerComponent().getRouter().getRoute("RouteView1")
-                .attachPatternMatched(this._onRouteView1Matched, this);
         },
 
         _getCityInput: function () {
             return this.byId("popularPlacesHeader--cityInput");
-        },
-
-        _onRouteView1Matched: function () {
-            var sCity = this.getOwnerComponent()._pendingCitySearch;
-            if (!sCity) {
-                return;
-            }
-
-            this.getOwnerComponent()._pendingCitySearch = null;
-            this.navigateToCity(sCity);
         },
 
         onExit: function() {
@@ -174,8 +162,9 @@ sap.ui.define([
                 .then(response => response.json())
                 .then(data => {
                     if (data.length === 0) {
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
                         return;
-                    } 
+                    }
 
                     var oGeoMap = that.byId("geoMap");
                     var lat = parseFloat(data[0].lat);
@@ -377,7 +366,7 @@ sap.ui.define([
             }
             var infoLocal = await this.identificarLocal(sCidade);
 
-            var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+            var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
                 encodeURIComponent(sCidade) + "&appid=" + sChaveAPI + "&units=metric";
 
@@ -599,7 +588,7 @@ sap.ui.define([
                 })
                 .catch(err => {
                     console.error(err);
-                    MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                    MessageToast.show("Erro ao buscar dados do clima.");
                 });
         },
 
@@ -756,7 +745,7 @@ sap.ui.define([
         },
         
         fetchWeatherForCity: function(cityName) {
-            var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+            var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
                 encodeURIComponent(cityName) + "&appid=" + sChaveAPI + "&units=metric";
 
@@ -815,7 +804,7 @@ sap.ui.define([
                     // Buscar forecast para os próximos dias
                     var lat = dados.coord.lat;
                     var lon = dados.coord.lon;
-                    var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+                    var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
                     var sUrlForecast = "https://api.openweathermap.org/data/2.5/forecast?" +
                         "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric";
 
