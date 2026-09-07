@@ -36,6 +36,7 @@ Guardioes-do-Clima-main/
 │   │   ├── test/            # Testes unitários e de integração
 │   │   └── manifest.json    # Configuração da aplicação
 │   ├── package.json         # Dependências e scripts npm
+│   ├── .env                 # Chave da OpenWeatherMap (criar manualmente)
 │   ├── ui5.yaml             # Configuração do UI5 Tooling
 │   ├── Dockerfile           # Imagem Docker da aplicação
 │   └── docker-compose.yml   # Orquestração com Docker Compose
@@ -57,6 +58,14 @@ git clone <url-do-repositorio>
 cd Guardioes-do-Clima-main/project
 npm install
 ```
+
+Crie o arquivo `.env` na pasta `project/` (não vai para o Git):
+
+```env
+OPENWEATHERMAP_API_KEY=sua_chave_aqui
+```
+
+Chave em [openweathermap.org/api](https://openweathermap.org/api). O `npm start` gera o `webapp/config/Env.js` automaticamente. Se o `.env` for apagado, recrie o arquivo e rode `npm run env:config`.
 
 ## Como executar
 
@@ -97,6 +106,7 @@ Acesse: [http://localhost:8080](http://localhost:8080)
 
 | Comando | Descrição |
 |---------|-----------|
+| `npm run env:config` | Gera config a partir do `.env` |
 | `npm start` | Inicia o servidor de desenvolvimento |
 | `npm run build` | Gera build de produção em `dist/` |
 | `npm run unit-test` | Abre testes unitários (QUnit) |

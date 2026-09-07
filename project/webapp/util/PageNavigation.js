@@ -25,11 +25,6 @@ sap.ui.define([], function () {
 
         navigateToPage2: function (oController) {
             oController.getOwnerComponent().getRouter().navTo("RouteView2");
-        },
-
-        navigateToPage1WithCity: function (oController, sCity) {
-            oController.getOwnerComponent()._pendingCitySearch = sCity;
-            this.navigateToPage1(oController);
         }
     };
 });

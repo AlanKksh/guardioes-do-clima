@@ -8,12 +8,18 @@
     "sapui5"
   ],
   "main": "webapp/index.html",
-  "dependencies": {},
   "devDependencies": {
+    "@sap/ux-ui5-tooling": "1",
     "@ui5/cli": "^4.0.16",
-    "@sap/ux-ui5-tooling": "1"
+    "dotenv": "^16.6.1"
   },
   "scripts": {
+    "env:config": "node scripts/generate-env-config.mjs",
+    "prestart": "npm run env:config",
+    "prestart-local": "npm run env:config",
+    "prestart-noflp": "npm run env:config",
+    "prestart-mock": "npm run env:config",
+    "prebuild": "npm run env:config",
     "start": "fiori run --open \"test/flp.html\"",
     "start-local": "fiori run --config ./ui5-local.yaml --open \"test/flp.html\"",
     "build": "ui5 build --config=ui5.yaml --clean-dest --dest dist",
