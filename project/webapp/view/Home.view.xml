@@ -1,0 +1,66 @@
+<mvc:View
+    controllerName="alan.projetos.projetinho.controller.Home"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+    <Page
+        id="homePage"
+        showHeader="false"
+        class="homeLaunchpadPage"
+        enableScrolling="true">
+        <customHeader>
+            <Bar id="homeShellBar" class="homeFlpShellBar">
+                <contentLeft>
+                    <HBox alignItems="Center" class="homeFlpBrand">
+                        <core:Icon
+                            src="sap-icon://world"
+                            size="1.25rem"
+                            color="#0a6ed1"
+                            class="sapUiTinyMarginEnd"/>
+                        <Title
+                            id="homeBrandTitle"
+                            text="{i18n>appTitle}"
+                            level="H5"
+                            class="homeFlpHomeBtn"/>
+                    </HBox>
+                </contentLeft>
+                <contentRight>
+                    <Text
+                        id="homeUserEmail"
+                        text="{auth>/user/email}"
+                        class="homeUserEmail sapUiTinyMarginEnd"/>
+                    <Button
+                        id="btnLogout"
+                        text="{i18n>logoutButton}"
+                        type="Transparent"
+                        press=".onLogout"/>
+                </contentRight>
+            </Bar>
+        </customHeader>
+        <content>
+            <VBox id="homeShell" class="homeShell">
+                <HBox id="homeTabs" class="homeFlpTabs" alignItems="Center">
+                    <Text text="Home" class="homeFlpTab homeFlpTabActive"/>
+                </HBox>
+                <HBox
+                    id="homeTilesRow"
+                    class="homeTilesRow"
+                    wrap="Wrap"
+                    alignItems="Start">
+                    <GenericTile
+                        id="tileClimateApp"
+                        class="homeAppTile"
+                        header="{i18n>climateTileTitle}"
+                        subheader="{i18n>climateTileSubtitle}"
+                        frameType="OneByOne"
+                        press=".onOpenClimateApp">
+                        <TileContent>
+                            <ImageContent src="../assets/logo-marca.jpeg"/>
+                        </TileContent>
+                    </GenericTile>
+                </HBox>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

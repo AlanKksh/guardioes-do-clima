@@ -116,9 +116,41 @@ Acesse: [http://localhost:8080](http://localhost:8080)
 
 | Página | Rota | Descrição |
 |--------|------|-----------|
-| Launchpad (FLP) | `test/flp.html` | Tela inicial ao rodar `npm start` |
-| Guardiões do Clima | `/` | Painel de clima, mapa 2D e guia turístico |
-| Map 3D | `/view2` | Globo terrestre 3D com camada climática |
+| Login | `#/login` | Autenticação com Google (Netlify Identity) |
+| Launchpad | `#/home` | Tela inicial após login, com tile da aplicação |
+| Guardiões do Clima | `#/app` | Painel de clima, mapa 2D e guia turístico |
+| Map 3D | `#/view2` | Globo terrestre 3D com camada climática |
+
+## Autenticação (Netlify Identity)
+
+O login usa [@netlify/identity](https://www.npmjs.com/package/@netlify/identity) integrado ao SAPUI5. Rotas protegidas redirecionam para `#/login` quando não há sessão.
+
+### Configuração no Netlify (painel)
+
+1. **Site → Identity → Enable Identity**
+2. **Identity → Registration → External providers → Google** (habilite e configure OAuth no Google Cloud Console)
+3. Faça o deploy do site (build publica `project/dist`)
+
+### Desenvolvimento local com auth
+
+O endpoint `/.netlify/identity` só existe no Netlify ou com o CLI:
+
+```bash
+npm install -g netlify-cli
+cd project
+npm run build
+netlify dev
+```
+
+Sem `netlify dev`, a tela de login aparece, mas o botão Google falha (Identity indisponível).
+
+### Fluxo da aplicação
+
+```
+Login (#/login)  →  Home (#/home)  →  App (#/app) / Map 3D (#/view2)
+```
+
+Após login com Google, o usuário vai para o Launchpad. O e-mail aparece no header com o botão **Sair**.
 
 ## Licença
 

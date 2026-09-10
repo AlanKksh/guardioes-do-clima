@@ -1,0 +1,54 @@
+<mvc:View
+    controllerName="alan.projetos.projetinho.controller.Login"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    displayBlock="true">
+    <Page
+        id="loginPage"
+        showHeader="false"
+        class="loginPage"
+        enableScrolling="false">
+        <content>
+            <VBox
+                id="loginBox"
+                alignItems="Center"
+                justifyContent="Center"
+                height="100%"
+                class="loginBox">
+                <Image
+                    id="loginLogo"
+                    src="../assets/logo-marca.jpeg"
+                    alt="Guardiões do Clima"
+                    width="7rem"
+                    densityAware="false"
+                    class="loginLogo"/>
+                <Title
+                    id="loginTitle"
+                    text="{i18n>loginTitle}"
+                    titleStyle="H2"
+                    class="loginTitle"/>
+                <Text
+                    id="loginSubtitle"
+                    text="{i18n>loginSubtitle}"
+                    class="loginSubtitle"/>
+                <BusyIndicator
+                    id="loginBusy"
+                    visible="{auth>/loading}"
+                    class="loginBusy"/>
+                <Button
+                    id="btnGoogleLogin"
+                    text="{i18n>loginGoogleButton}"
+                    type="Emphasized"
+                    icon="sap-icon://visitors"
+                    press=".onGoogleLogin"
+                    visible="{= !${auth>/loading} }"
+                    class="loginGoogleButton"/>
+                <Text
+                    id="loginError"
+                    text="{auth>/error}"
+                    visible="{= !!${auth>/error} }"
+                    class="loginError"/>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

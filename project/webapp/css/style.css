@@ -310,6 +310,53 @@ html, body, body > div, #container, #container-uiarea, #app {
   }
 }
 
+/* Login */
+.loginPage,
+.loginPage .sapMPageEnableScrolling,
+.loginPage .sapMPageContent {
+  height: 100%;
+}
+
+.loginBox {
+  min-height: 100%;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(180deg, #f5faff 0%, #ffffff 45%);
+}
+
+.loginLogo {
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.loginTitle {
+  margin-bottom: 0.5rem;
+}
+
+.loginSubtitle {
+  color: #6a6d70;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.loginGoogleButton {
+  min-width: 14rem;
+}
+
+.loginBusy {
+  margin: 1rem 0;
+}
+
+.loginError {
+  margin-top: 1rem;
+  color: #bb0000;
+  text-align: center;
+}
+
+.homeUserEmail {
+  color: #6a6d70;
+  font-size: 0.875rem;
+}
+
 /* Home Launchpad (estilo Fiori Launchpad) */
 .homeLaunchpadPage {
   background: #fff;

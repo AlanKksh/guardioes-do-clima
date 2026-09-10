@@ -25,6 +25,10 @@ sap.ui.define([], function () {
 
         navigateToPage2: function (oController) {
             oController.getOwnerComponent().getRouter().navTo("RouteView2");
+        },
+
+        navigateToHome: function (oController) {
+            oController.getOwnerComponent().getRouter().navTo("RouteHome");
         }
     };
 });

@@ -78,8 +78,15 @@
       },
       "routes": [
         {
+          "name": "RouteLogin",
+          "pattern": "login",
+          "target": [
+            "TargetLogin"
+          ]
+        },
+        {
           "name": "RouteView1",
-          "pattern": "",
+          "pattern": "app",
           "target": [
             "TargetView1"
           ]
@@ -90,9 +97,24 @@
           "target": [
             "TargetView2"
           ]
+        },
+        {
+          "name": "RouteHome",
+          "pattern": "",
+          "target": [
+            "TargetHome"
+          ]
         }
       ],
       "targets": {
+        "TargetLogin": {
+          "id": "Login",
+          "name": "Login"
+        },
+        "TargetHome": {
+          "id": "Home",
+          "name": "Home"
+        },
         "TargetView1": {
           "id": "View1",
           "name": "View1"

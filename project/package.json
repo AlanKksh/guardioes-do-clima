@@ -15,14 +15,16 @@
   },
   "scripts": {
     "env:config": "node scripts/generate-env-config.mjs",
-    "prestart": "npm run env:config",
-    "prestart-local": "npm run env:config",
-    "prestart-noflp": "npm run env:config",
-    "prestart-mock": "npm run env:config",
-    "prebuild": "npm run env:config",
-    "start": "fiori run --open \"test/flp.html\"",
-    "start-local": "fiori run --config ./ui5-local.yaml --open \"test/flp.html\"",
+    "identity:copy": "node scripts/copy-netlify-identity.mjs",
+    "prestart": "npm run env:config && npm run identity:copy",
+    "prestart-local": "npm run env:config && npm run identity:copy",
+    "prestart-noflp": "npm run env:config && npm run identity:copy",
+    "prestart-mock": "npm run env:config && npm run identity:copy",
+    "prebuild": "npm run env:config && npm run identity:copy",
+    "start": "fiori run --open \"index.html?sap-ui-xx-viewCache=false\"",
+    "start-local": "fiori run --config ./ui5-local.yaml --open \"index.html?sap-ui-xx-viewCache=false\"",
     "build": "ui5 build --config=ui5.yaml --clean-dest --dest dist",
+    "postbuild": "npm run identity:copy",
     "deploy": "fiori verify",
     "deploy-config": "fiori add deploy-config",
     "start-mock": "fiori run --config ./ui5-mock.yaml --open \"test/flpSandbox.html?sap-ui-xx-viewCache=false#zsdcursofiori-display\"",
@@ -32,5 +34,8 @@
     "unit-test": "fiori run --open test/unit/unitTests.qunit.html",
     "unit-test-open": "start http://localhost:8080/test/unit/unitTests.qunit.html"
   },
-  "sapuxLayer": "CUSTOMER_BASE"
+  "sapuxLayer": "CUSTOMER_BASE",
+  "dependencies": {
+    "@netlify/identity": "^2.0.0"
+  }
 }

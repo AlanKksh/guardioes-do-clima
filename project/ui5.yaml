@@ -4,6 +4,10 @@ specVersion: "3.1"
 metadata:
   name: alan.projetos.projetinho
 type: application
+builder:
+  resources:
+    excludes:
+      - "**/lib/netlify-identity.js"
 server:
   customMiddleware:
     - name: fiori-tools-proxy
