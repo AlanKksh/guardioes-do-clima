@@ -103,7 +103,7 @@ sap.ui.define([
                 return;
             }
 
-            if (sRouteName === "RouteLogin") {
+            if (sRouteName === "RouteLogin" || sRouteName === "RouteLoginDefault") {
                 if (bLoggedIn) {
                     oEvent.preventDefault();
                     oRouter.navTo("RouteHome", {}, true);

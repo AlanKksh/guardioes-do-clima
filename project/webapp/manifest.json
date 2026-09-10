@@ -85,6 +85,13 @@
           ]
         },
         {
+          "name": "RouteHome",
+          "pattern": "home",
+          "target": [
+            "TargetHome"
+          ]
+        },
+        {
           "name": "RouteView1",
           "pattern": "app",
           "target": [
@@ -99,10 +106,10 @@
           ]
         },
         {
-          "name": "RouteHome",
+          "name": "RouteLoginDefault",
           "pattern": "",
           "target": [
-            "TargetHome"
+            "TargetLogin"
           ]
         }
       ],
