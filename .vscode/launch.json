@@ -16,7 +16,7 @@
             ],
             "args": [
                 "--open",
-                "test/flp.html#app-preview"
+                "test/flp.html"
             ],
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",
@@ -43,7 +43,7 @@
                 "--config",
                 "./ui5-local.yaml",
                 "--open",
-                "test/flp.html#app-preview"
+                "test/flp.html"
             ],
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",

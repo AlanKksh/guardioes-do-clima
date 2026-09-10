@@ -2,8 +2,10 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/m/MessageToast",
     "alan/projetos/projetinho/model/MockLocaisService",
-    "alan/projetos/projetinho/util/PageNavigation"
-], function(Controller, MessageToast, MockLocaisService, PageNavigation) {
+    "alan/projetos/projetinho/util/PageNavigation",
+    "alan/projetos/projetinho/util/LocationSearch",
+    "alan/projetos/projetinho/config/Env"
+], function(Controller, MessageToast, MockLocaisService, PageNavigation, LocationSearch, Env) {
     "use strict";
 
     return Controller.extend("alan.projetos.projetinho.controller.View1", {
@@ -106,6 +108,10 @@ sap.ui.define([
             PageNavigation.init(this, "page1");
         },
 
+        _getCityInput: function () {
+            return this.byId("popularPlacesHeader--cityInput");
+        },
+
         onExit: function() {
             // Limpar o intervalo quando o controller for destruído
             if (this._timeInterval) {
@@ -127,15 +133,28 @@ sap.ui.define([
 
 
         onButtonPress: function () {
-            console.log("Botão buscar pressionado!");
+            var sQuery = LocationSearch.normalizeQuery(this._getCityInput().getValue());
+
+            if (!sQuery) {
+                MessageToast.show("Digite uma cidade.");
+                return;
+            }
+
+            if (!LocationSearch.isValidSearchQuery(sQuery)) {
+                MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                return;
+            }
+
             this.onSearchLocation();
             this.onBuscarClima();
         },
 
 
         onSearchLocation: function () {
-            var sQuery = this.byId("cityInput").getValue();
-            if (!sQuery) return;
+            var sQuery = LocationSearch.normalizeQuery(this._getCityInput().getValue());
+            if (!sQuery) {
+                return;
+            }
 
             var that = this;
             
@@ -143,9 +162,9 @@ sap.ui.define([
                 .then(response => response.json())
                 .then(data => {
                     if (data.length === 0) {
-                        MessageToast.show("Local não encontrado.");
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
                         return;
-                    } 
+                    }
 
                     var oGeoMap = that.byId("geoMap");
                     var lat = parseFloat(data[0].lat);
@@ -335,30 +354,28 @@ sap.ui.define([
         },
 
         onBuscarClima: async function () {
-            console.log(">>> ENTROU NO onBuscarClima <<<");
-            var sCidade = this.byId("cityInput").getValue();
+            var sCidade = LocationSearch.normalizeQuery(this._getCityInput().getValue());
             if (!sCidade) {
                 MessageToast.show("Digite uma cidade.");
                 return;
             }
-            console.log("onBuscarClima chamado para cidade:", sCidade);
-            console.log("VALOR PESQUISADO:", sCidade);
+
+            if (!LocationSearch.isValidSearchQuery(sCidade)) {
+                MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                return;
+            }
             var infoLocal = await this.identificarLocal(sCidade);
-            console.log("LOCAL IDENTIFICADO:", infoLocal);        
 
-            var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+            var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
-                encodeURIComponent(sCidade) + "&appid=" + sChaveAPI + "&units=metric";
-
-            console.log("Fazendo requisição para:", sUrlWeather);
+                encodeURIComponent(sCidade) + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
             fetch(sUrlWeather)
                 .then(res => res.json())
                 .then(dados => {
-                    console.log("Resposta da API /weather:", dados);
-
-                    if (!dados.coord) {
-                        throw new Error("Coordenadas não encontradas para esta cidade.");
+                    if (LocationSearch.isOpenWeatherMapNotFound(dados)) {
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                        return;
                     }
 
                     // Adicionar texto dinâmico baseado na descrição do clima
@@ -366,16 +383,15 @@ sap.ui.define([
                     var weatherDescriptionPT = this.getWeatherDescriptionInPortuguese(weatherDescription);
                     dados.weatherDescriptionPT = weatherDescriptionPT;
                     dados.weather[0].description = weatherDescriptionPT;
-                    var dynamicText = this.getDynamicWeatherText(weatherDescription);
+                    var weatherMain = dados.weather[0].main;
+                    var dynamicText = this.getDynamicWeatherText(weatherMain, weatherDescription);
                     dados.dynamicText = dynamicText;
                     
                     // Obter ícone e cor baseado no tipo de clima
-                    var weatherMain = dados.weather[0].main;
                     var iconAndColor = this.getWeatherIconAndColor(weatherMain);
                     dados.weatherIcon = iconAndColor.icon;
                     dados.weatherColor = iconAndColor.color;
-                    console.log("Weather Main:", weatherMain, "| Icon:", iconAndColor.icon, "| Color:", iconAndColor.color);
-                    
+
                     // Arredondar temperatura para número inteiro
                     dados.main.temp = Math.round(dados.main.temp);
                     
@@ -404,9 +420,7 @@ sap.ui.define([
                     this.getView().setModel(oWeatherModel, "weatherModel");
 
                     // Atualizar recomendação baseada no clima
-                    console.log("Prestes a chamar updateRecommendation...");
                     this.updateRecommendation(dados);
-                    console.log("updateRecommendation chamado com sucesso!");
 
                     var lat = dados.coord.lat;
                     var lon = dados.coord.lon;
@@ -417,10 +431,8 @@ sap.ui.define([
                     // Mock local (sem API externa de turismo)
                     this.buscarInformacoesTuristicas(sCidade || dados.name);
 
-                    console.log("Latitude:", lat, "Longitude:", lon);
-
                     var sUrlForecast = "https://api.openweathermap.org/data/2.5/forecast?" +
-                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric";
+                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
                     return fetch(sUrlForecast);
                 })
@@ -572,16 +584,11 @@ sap.ui.define([
                     const organizedForecasts = this.organizeForecastsByWeek(dailyForecasts);
 
                     var oForecastModel = new sap.ui.model.json.JSONModel(organizedForecasts);
-                    console.log("Previsão semanal organizada:", organizedForecasts); 
-                    console.log("ForecastModel criado com dados:", oForecastModel.getData());
                     this.getView().setModel(oForecastModel, "forecastModel");
-                    
-                    // Verificar se o modelo foi definido corretamente
-                    var testModel = this.getView().getModel("forecastModel");
-                    console.log("Modelo forecastModel na view:", testModel ? testModel.getData() : "Modelo não encontrado");
                 })
                 .catch(err => {
-                    MessageToast.show("Erro ao buscar clima: " + err.message);
+                    console.error(err);
+                    MessageToast.show("Erro ao buscar dados do clima.");
                 });
         },
 
@@ -668,9 +675,7 @@ sap.ui.define([
         getWeatherImage: function(weatherMain, weatherDescription) {
             // Cache buster para forçar o refresh da imagem
             var timestamp = new Date().getTime();
-            
-            console.log("getWeatherImage chamado com:", weatherMain, "-", weatherDescription);
-            
+
             // Converter descrição para minúscula para facilitar comparação
             var desc = weatherDescription ? weatherDescription.toLowerCase() : '';
             
@@ -692,7 +697,6 @@ sap.ui.define([
         },
 
         organizeForecastsByWeek: function(forecasts) {
-            console.log("Organizando forecasts:", forecasts);
             const dayOrder = ['seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.', 'dom.'];
             const normalizedForecasts = Array.isArray(forecasts) ? forecasts : [];
 
@@ -724,7 +728,6 @@ sap.ui.define([
                 };
             });
 
-            console.log("Forecasts organizados:", organized);
             return organized;
         },
 
@@ -734,7 +737,7 @@ sap.ui.define([
 
         navigateToCity: function(cityName) {
             // Mesmo fluxo do botão Buscar: preenche o input e dispara clima + mapa + mock
-            var oCityInput = this.byId("cityInput");
+            var oCityInput = this._getCityInput();
             if (oCityInput) {
                 oCityInput.setValue(cityName);
             }
@@ -742,18 +745,16 @@ sap.ui.define([
         },
         
         fetchWeatherForCity: function(cityName) {
-            console.log("Buscando clima para:", cityName);
-            var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+            var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
             var sUrlWeather = "https://api.openweathermap.org/data/2.5/weather?q=" +
-                encodeURIComponent(cityName) + "&appid=" + sChaveAPI + "&units=metric";
+                encodeURIComponent(cityName) + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
             fetch(sUrlWeather)
                 .then(res => res.json())
                 .then(dados => {
-                    console.log("Resposta da API recebida para", cityName);
-                    
-                    if (!dados.coord) {
-                        throw new Error("Coordenadas não encontradas para esta cidade.");
+                    if (LocationSearch.isOpenWeatherMapNotFound(dados)) {
+                        MessageToast.show(LocationSearch.INVALID_LOCATION_MESSAGE);
+                        return;
                     }
 
                     // Adicionar texto dinâmico e ícone
@@ -761,15 +762,14 @@ sap.ui.define([
                     var weatherDescriptionPT = this.getWeatherDescriptionInPortuguese(weatherDescription);
                     dados.weatherDescriptionPT = weatherDescriptionPT;
                     dados.weather[0].description = weatherDescriptionPT;
-                    var dynamicText = this.getDynamicWeatherText(weatherDescription);
+                    var weatherMain = dados.weather[0].main;
+                    var dynamicText = this.getDynamicWeatherText(weatherMain, weatherDescription);
                     dados.dynamicText = dynamicText;
                     
-                    var weatherMain = dados.weather[0].main;
                     var iconAndColor = this.getWeatherIconAndColor(weatherMain);
                     dados.weatherIcon = iconAndColor.icon;
                     dados.weatherColor = iconAndColor.color;
-                    console.log("[fetchWeatherForCity] Weather Main:", weatherMain, "| Icon:", iconAndColor.icon, "| Color:", iconAndColor.color);
-                    
+
                     // Arredondar temperatura para número inteiro
                     dados.main.temp = Math.round(dados.main.temp);
                     
@@ -799,15 +799,14 @@ sap.ui.define([
                     this.getView().setModel(oWeatherModel, "weatherModel");
 
                     // Atualizar recomendação baseada no clima
-                    console.log("🔄 Chamando updateRecommendation...");
                     this.updateRecommendation(dados);
 
                     // Buscar forecast para os próximos dias
                     var lat = dados.coord.lat;
                     var lon = dados.coord.lon;
-                    var sChaveAPI = "d6da45bb98ec8fca6ff1ea2cfa6b8674";
+                    var sChaveAPI = Env.OPENWEATHERMAP_API_KEY;
                     var sUrlForecast = "https://api.openweathermap.org/data/2.5/forecast?" +
-                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric";
+                        "lat=" + lat + "&lon=" + lon + "&appid=" + sChaveAPI + "&units=metric&lang=pt_br";
 
                     return fetch(sUrlForecast);
                 })
@@ -959,13 +958,7 @@ sap.ui.define([
                     const organizedForecasts = this.organizeForecastsByWeek(dailyForecasts);
 
                     var oForecastModel = new sap.ui.model.json.JSONModel(organizedForecasts);
-                    console.log("Previsão semanal organizada (fetchWeatherForCity):", organizedForecasts); 
-                    console.log("ForecastModel criado com dados (fetchWeatherForCity):", oForecastModel.getData());
                     this.getView().setModel(oForecastModel, "forecastModel");
-                    
-                    // Verificar se o modelo foi definido corretamente
-                    var testModel = this.getView().getModel("forecastModel");
-                    console.log("Modelo forecastModel na view (fetchWeatherForCity):", testModel ? testModel.getData() : "Modelo não encontrado");
                 })
                 .catch(err => {
                     console.error("❌ Erro ao buscar clima:", err);
@@ -999,8 +992,6 @@ sap.ui.define([
 
         // Método para atualizar recomendações baseadas no clima
         updateRecommendation: function(weatherData) {
-            console.log("updateRecommendation CHAMADO");
-
             var suggestions = [];
             var weatherMain = (weatherData.weather[0].main || "").toLowerCase();
             var weatherDesc = (weatherData.weather[0].description || "").toLowerCase();
@@ -1059,8 +1050,6 @@ sap.ui.define([
                 };
             });
 
-            console.log("Sugestões geradas para", weatherMain, ":", suggestions);
-
             this.getView().setModel(
                 new sap.ui.model.json.JSONModel({ suggestions: suggestions }),
                 "suggestionsModel"
@@ -1077,8 +1066,26 @@ sap.ui.define([
                 'light rain': 'chuva leve',
                 'moderate rain': 'chuva moderada',
                 'heavy rain': 'chuva forte',
+                'very heavy rain': 'chuva muito forte',
+                'extreme rain': 'chuva extrema',
+                'freezing rain': 'chuva congelante',
+                'light intensity shower rain': 'chuva leve',
+                'shower rain': 'chuva passageira',
+                'heavy intensity shower rain': 'chuva forte',
+                'ragged shower rain': 'chuva irregular',
+                'light intensity drizzle': 'garoa leve',
+                'drizzle': 'garoa',
+                'heavy intensity drizzle': 'garoa forte',
+                'thunderstorm with light rain': 'tempestade com chuva leve',
+                'thunderstorm with rain': 'tempestade com chuva',
+                'thunderstorm with heavy rain': 'tempestade com chuva forte',
+                'light thunderstorm': 'tempestade leve',
                 'thunderstorm': 'tempestade',
+                'heavy thunderstorm': 'tempestade forte',
+                'ragged thunderstorm': 'tempestade irregular',
+                'light snow': 'neve leve',
                 'snow': 'neve',
+                'heavy snow': 'neve forte',
                 'mist': 'névoa',
                 'fog': 'névoa',
                 'haze': 'névoa',
@@ -1088,42 +1095,49 @@ sap.ui.define([
                 'ash': 'cinzas',
                 'squall': 'rajada',
                 'tornado': 'tornado',
-                'drizzle': 'chuvisco',
                 'heavy intensity rain': 'chuva forte',
                 'rain': 'chuva',
                 'clouds': 'nublado'
             };
 
-            return weatherDescriptions[(description || '').toLowerCase()] || (description || '');
+            var normalizedDescription = (description || '').toLowerCase();
+            var translated = weatherDescriptions[normalizedDescription] || normalizedDescription;
+            return this._capitalizeFirstLetter(translated);
         },
 
-        // Função para gerar texto dinâmico baseado na descrição do clima
-        getDynamicWeatherText: function(weatherDescription) {
-            // Condições que indicam chuva
-            const rainConditions = [
-                'light rain', 'moderate rain', 'heavy rain', 'thunderstorm', 
-                'drizzle', 'heavy intensity rain', 'shower rain', 'rain'
-            ];
-            
-            // Se for condição de chuva, retorna "Mais Chuvoso"
-            if (rainConditions.includes(weatherDescription)) {
-                return 'Mais Chuvoso';
+        _capitalizeFirstLetter: function(text) {
+            if (!text) {
+                return text;
             }
-            
-            // Para todas as outras condições (sol, nuvens, etc.), retorna "Mais Ensolarado"
-            return 'Mais Ensolarado';
+            return text.charAt(0).toUpperCase() + text.slice(1);
+        },
+
+        // Função para gerar texto dinâmico baseado no tipo de clima (main + descrição)
+        getDynamicWeatherText: function(weatherMain, weatherDescription) {
+            var main = (weatherMain || "").toLowerCase();
+            var desc = (weatherDescription || "").toLowerCase();
+
+            var bChuva =
+                main === "rain" ||
+                main === "drizzle" ||
+                main === "thunderstorm" ||
+                desc.indexOf("chuva") !== -1 ||
+                desc.indexOf("garoa") !== -1 ||
+                desc.indexOf("tempestade") !== -1 ||
+                desc.indexOf("rain") !== -1 ||
+                desc.indexOf("drizzle") !== -1 ||
+                desc.indexOf("thunderstorm") !== -1;
+
+            return bChuva ? "Mais Chuvoso" : "Mais Ensolarado";
         },
 
         // Função para determinar o ícone e cor baseado no tipo de clima
         getWeatherIconAndColor: function(weatherMain) {
             const rainConditions = ['Rain', 'Thunderstorm', 'Drizzle'];
             const cloudConditions = ['Clouds'];
-            
-            console.log("Determinando ícone para:", weatherMain);
-            
+
             // Chuva e Trovão - usar ícone de chuva com azul
             if (rainConditions.includes(weatherMain)) {
-                console.log("Chuva/Trovão - retornando weather-proofing com azul");
                 return {
                     icon: 'sap-icon://weather-proofing',
                     color: '#4682B4'
@@ -1132,7 +1146,6 @@ sap.ui.define([
             
             // Nuvem - usar ícone de nuvem com azul
             if (cloudConditions.includes(weatherMain)) {
-                console.log("Nuvem - retornando cloud com azul");
                 return {
                     icon: 'sap-icon://cloud',
                     color: '#4682B4'
@@ -1140,7 +1153,6 @@ sap.ui.define([
             }
             
             // Sol/Claro - usar ícone de sol com laranja
-            console.log("Sol/Claro - retornando light-mode com laranja");
             return {
                 icon: 'sap-icon://light-mode',
                 color: '#FFA500'
@@ -1218,13 +1230,15 @@ sap.ui.define([
         },
 
         onVerMais: function () {
-            console.log("ENTROU NO onVerMais");
-
             // Recria a modal para refletir o layout atual (país/estado/pontos)
             if (this._oDialog) {
                 this._oDialog.destroy();
                 this._oDialog = null;
             }
+
+            var sTopicsTitle = this._localPesquisado
+                ? "O que fazer por aqui"
+                : "Experimente selecionar uma cidade para ter o guia de destinos";
 
             this._oDialog = new sap.m.Dialog({
                 title: "Guia do destino",
@@ -1254,7 +1268,7 @@ sap.ui.define([
                             }).addStyleClass("sapUiSmallMarginBottom"),
 
                             new sap.m.Title({
-                                text: "O que fazer por aqui",
+                                text: sTopicsTitle,
                                 titleStyle: "H5"
                             }).addStyleClass("sapUiTinyMarginBottom"),
 
@@ -1312,8 +1326,6 @@ sap.ui.define([
                     new sap.ui.model.json.JSONModel(oResultado),
                     "placesModel"
                 );
-
-                console.log("RESULTADO TURISMO (mock):", oResultado);
             } catch (error) {
                 console.error("Erro ao buscar mock de locais:", error);
 
@@ -1392,8 +1404,6 @@ sap.ui.define([
                 }
 
                 var resultado = resultados[0];
-
-                console.log("NOMINATIM:", resultado);
 
                 var tipo = "Cidade";
                 var sAddressType = resultado.addresstype || "";
