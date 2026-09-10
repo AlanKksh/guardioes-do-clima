@@ -8,6 +8,10 @@ sap.ui.define([
 
     var aProtectedRoutes = ["RouteHome", "RouteView1", "RouteView2"];
 
+    function isAuthenticated(oUser) {
+        return !!(oUser && oUser.email);
+    }
+
     return UIComponent.extend("alan.projetos.projetinho.Component", {
         metadata: {
             manifest: "json",
@@ -46,10 +50,16 @@ sap.ui.define([
                     return Identity.getUser();
                 })
                 .then(function (oUser) {
+                    if (!isAuthenticated(oUser)) {
+                        oUser = null;
+                    }
                     oAuthModel.setProperty("/user", oUser);
                     oAuthModel.setProperty("/loading", false);
 
                     return Identity.onAuthChange(function (_sEvent, oChangedUser) {
+                        if (!isAuthenticated(oChangedUser)) {
+                            oChangedUser = null;
+                        }
                         oAuthModel.setProperty("/user", oChangedUser);
 
                         if (!oChangedUser) {
@@ -67,7 +77,9 @@ sap.ui.define([
                     oRouter.initialize();
 
                     var oUser = oAuthModel.getProperty("/user");
-                    if (!oUser) {
+                    if (!isAuthenticated(oUser)) {
+                        oAuthModel.setProperty("/user", null);
+                        oRouter.navTo("RouteLogin", {}, true);
                         return;
                     }
 
@@ -84,21 +96,22 @@ sap.ui.define([
             var oUser = oAuthModel.getProperty("/user");
             var bLoading = oAuthModel.getProperty("/loading");
             var oRouter = this.getRouter();
+            var bLoggedIn = isAuthenticated(oUser);
 
             if (bLoading) {
                 oEvent.preventDefault();
                 return;
             }
 
-            if (sRouteName === "RouteLogin" || sRouteName === "RouteLoginDefault") {
-                if (oUser) {
+            if (sRouteName === "RouteLogin") {
+                if (bLoggedIn) {
                     oEvent.preventDefault();
                     oRouter.navTo("RouteHome", {}, true);
                 }
                 return;
             }
 
-            if (aProtectedRoutes.indexOf(sRouteName) !== -1 && !oUser) {
+            if (aProtectedRoutes.indexOf(sRouteName) !== -1 && !bLoggedIn) {
                 oEvent.preventDefault();
                 oRouter.navTo("RouteLogin", {}, true);
             }

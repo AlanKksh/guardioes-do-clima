@@ -27,7 +27,9 @@ sap.ui.define([], function () {
         },
 
         oauthLogin: function (sProvider) {
-            return invoke("oauthLogin", [sProvider]);
+            return loadModule().then(function (oModule) {
+                oModule.oauthLogin(sProvider);
+            });
         },
 
         logout: function () {

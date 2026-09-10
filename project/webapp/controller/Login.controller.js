@@ -9,7 +9,7 @@ sap.ui.define([
         onInit: function () {
             var oAuthModel = this.getOwnerComponent().getModel("auth");
 
-            if (oAuthModel && oAuthModel.getProperty("/user")) {
+            if (this._isAuthenticated(oAuthModel.getProperty("/user"))) {
                 this._navigateToHome();
             }
         },
@@ -19,13 +19,27 @@ sap.ui.define([
             oAuthModel.setProperty("/error", "");
 
             Identity.oauthLogin("google").catch(function (oError) {
-                var sMessage = oError && oError.message
-                    ? oError.message
-                    : "Não foi possível iniciar o login com Google.";
+                this._handleLoginError(oError, oAuthModel);
+            }.bind(this));
+        },
 
-                oAuthModel.setProperty("/error", sMessage);
-                MessageBox.error(sMessage);
-            });
+        _handleLoginError: function (oError, oAuthModel) {
+            var sMessage = oError && oError.message ? oError.message : "";
+
+            if (sMessage.indexOf("Redirecting to OAuth provider") !== -1) {
+                return;
+            }
+
+            if (!sMessage) {
+                sMessage = "Não foi possível iniciar o login com Google.";
+            }
+
+            oAuthModel.setProperty("/error", sMessage);
+            MessageBox.error(sMessage);
+        },
+
+        _isAuthenticated: function (oUser) {
+            return !!(oUser && oUser.email);
         },
 
         _navigateToHome: function () {
