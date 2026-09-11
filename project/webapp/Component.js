@@ -47,6 +47,12 @@ sap.ui.define([
                     if (oResult && oResult.user) {
                         oAuthModel.setProperty("/user", oResult.user);
                     }
+                    return Identity.hydrateSession();
+                })
+                .then(function (oHydratedUser) {
+                    if (isAuthenticated(oHydratedUser)) {
+                        oAuthModel.setProperty("/user", oHydratedUser);
+                    }
                     return Identity.getUser();
                 })
                 .then(function (oUser) {
@@ -77,6 +83,7 @@ sap.ui.define([
                     oRouter.initialize();
 
                     var oUser = oAuthModel.getProperty("/user");
+
                     if (!isAuthenticated(oUser)) {
                         oAuthModel.setProperty("/user", null);
                         oRouter.navTo("RouteLogin", {}, true);
