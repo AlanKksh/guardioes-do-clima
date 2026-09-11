@@ -30,4 +30,9 @@ copyToDir(resolve(root, "webapp/lib"));
 
 if (existsSync(resolve(root, "dist"))) {
     copyToDir(resolve(root, "dist/lib"));
+
+    var sAuthBootstrapSource = resolve(root, "webapp/auth-bootstrap.js");
+    var sAuthBootstrapTarget = resolve(root, "dist/auth-bootstrap.js");
+    copyFileSync(sAuthBootstrapSource, sAuthBootstrapTarget);
+    console.log("Arquivo " + sAuthBootstrapTarget + " copiado com sucesso.");
 }

@@ -9,6 +9,7 @@ builder:
     excludes:
       - "**/lib/netlify-identity.js"
       - "**/lib/gotrue-js.js"
+      - "**/auth-bootstrap.js"
 server:
   customMiddleware:
     - name: fiori-tools-proxy
